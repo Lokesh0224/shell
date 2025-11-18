@@ -1,8 +1,8 @@
-#[allow(unused_imports)]
+#[allow(unused_imports)] //Do not show warnings if some imports are not used.
 use std::io::{self, Write};
 
 fn main() {
     // TODO: Uncomment the code below to pass the first stage
-    // print!("$ ");
-    // io::stdout().flush().unwrap();
+    print!("$ ");
+    io::stdout().flush().unwrap();
 }
