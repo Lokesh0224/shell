@@ -30,7 +30,7 @@ fn main() {
         match zeroth {
             "echo" => {
                 let output = args[1..].join(" ");
-                print!("{}", output);
+                println!("{}", output);
                 continue;
             }, 
 
