@@ -18,10 +18,22 @@ fn main() {
         if command.trim() == "exit"{
             break;
         }
-        println!("{}: command not found", command.trim());
+
+        let args: Vec<&str> = command.split_whitespace().collect();
+
+        if args.is_empty(){
+            continue;
+        }
+
+        if args[0] =="echo"{
+            let output = args[1..].join(" ");
+            println!("{}", output);
+        }
+        
+        // println!("{}: command not found", command.trim());
     }
     
 }
 
 
-//if exit, terminate the shell immediately 
+//implement echo => print the output with spaces and /n char at the end
