@@ -25,16 +25,48 @@ fn main() {
             continue;
         }
 
-        if args[0] =="echo"{
-            let output = args[1..].join(" ");
-            println!("{}", output);
-            continue;
+        let zeroth = args[0];
+
+        match zeroth {
+            "echo" => {
+                let output = args[1..].join(" ");
+                print!("{}", output);
+                continue;
+            }, 
+
+            "type" => {
+                //.len() = no.of elements not the index
+                if args.len() <2{ //if its just "type" and nothing else typed in terminal
+                    println!("mention the command.");
+                    continue;
+                }
+
+                let cmd = args[1];
+
+                match cmd{
+                    "echo" | "exit" | "type" => {
+                        println!("{} is a shell builtin", cmd);
+                    }, 
+                    
+                    _ => {
+                        println!("{}: not found", cmd);
+                    },
+                }
+                continue;
+
+            }, 
+
+            _ => {},
+            
         }
+
+        // if args[0] =="echo"{
+        //     let output = args[1..].join(" ");
+        //     println!("{}", output);
+        //     continue;
+        // }
         
         println!("{}: command not found", command.trim());
     }
     
 }
-
-
-//implement echo => print the output with spaces and /n char at the end
