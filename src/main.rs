@@ -2,10 +2,19 @@
 use std::io::{self, Write};
 
 fn main() {
-    print!("$ ");
-    io::stdout().flush().unwrap();
-    // Wait for user input
-    let mut command = String::new();
-    io::stdin().read_line(&mut command).unwrap();
-    println!("{}: command not found", command.trim());
+    loop{
+        print!("$ ");
+        io::stdout().flush().unwrap();
+        // Wait for user input
+        let mut command = String::new();
+        io::stdin().read_line(&mut command).unwrap();
+        println!("{}: command not found", command.trim());
+    }
+    
 }
+
+
+// display $ 
+//parse the exe command
+//Display the error
+//once again display $
