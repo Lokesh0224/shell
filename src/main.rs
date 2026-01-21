@@ -28,6 +28,7 @@ fn main() {
         if args[0] =="echo"{
             let output = args[1..].join(" ");
             println!("{}", output);
+            continue;
         }
         
         println!("{}: command not found", command.trim());
