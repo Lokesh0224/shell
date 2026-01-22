@@ -4,6 +4,7 @@ use std::env;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
+use std::process::Command;
 
 
 fn main() {
@@ -48,47 +49,100 @@ fn main() {
                 let cmd = args[1];
 
                 // 1. Check builtins
-                match cmd {
-                    "echo" | "exit" | "type" => {
-                        println!("{} is a shell builtin", cmd);
-                        continue;
-                    }, 
+                if matches!(cmd, "echo" | "exit" | "type"){
+                    println!("{} is a shell builtin", cmd);
+                    continue;
+                }
 
-                    // 2. Search in PATH
-                    _ => {
-                        //PATH is about where the OS keeps programs.
-                        let mut found = false;
-                        if let Ok(path_var) = env::var("PATH") {//will give the path of the command
-                            for dir in path_var.split(':') {
-                                let full_path = Path::new(dir).join(cmd);
+                // 2. Search in PATH
+                //PATH is about where the OS keeps programs.
+                let mut found = false;
+                if let Ok(path_var) = env::var("PATH") {//will give the path of the command
+                    for dir in path_var.split(':') {
+                        let full_path = Path::new(dir).join(cmd);
 
-                                if let Ok(metadata) = fs::metadata(&full_path) {
-                                    // Check execute permission
-                                    // 0o100 → owner execute
-                                    // 0o010 → group execute
-                                    // 0o001 → others execute
+                        if let Ok(metadata) = fs::metadata(&full_path) {
+                            // Check execute permission
+                            // 0o100 → owner execute
+                            // 0o010 → group execute
+                            // 0o001 → others execute
 
-                                    if metadata.permissions().mode() & 0o111 != 0 {
-                                        println!("{} is {}", cmd, full_path.display());
-                                        found = true;
-                                        break;
-                                    }
-                                }
+                            if metadata.permissions().mode() & 0o111 != 0 {
+                                println!("{} is {}", cmd, full_path.display());
+                                found = true;
+                                break;
                             }
                         }
+                    }
+                }
 
-                        // 3. Not found
-                        if !found {
-                            println!("{}: not found", cmd);
-                        }
-                        continue;
-                        }
+                // 3. Not found
+                if !found {
+                    println!("{}: not found", cmd);
                 }
 
                 
+                // match cmd {
+                //     "echo" | "exit" | "type" => {
+                //         println!("{} is a shell builtin", cmd);
+                //         continue;
+                //     }, 
+
+                    
+                //     _ => {
+                //         //PATH is about where the OS keeps programs.
+                //         let mut found = false;
+                //         if let Ok(path_var) = env::var("PATH") {//will give the path of the command
+                //             for dir in path_var.split(':') {
+                //                 let full_path = Path::new(dir).join(cmd);
+
+                //                 if let Ok(metadata) = fs::metadata(&full_path) {
+                //                     // Check execute permission
+                //                     // 0o100 → owner execute
+                //                     // 0o010 → group execute
+                //                     // 0o001 → others execute
+
+                //                     if metadata.permissions().mode() & 0o111 != 0 {
+                //                         println!("{} is {}", cmd, full_path.display());
+                //                         found = true;
+                //                         break;
+                //                     }
+                //                 }
+                //             }
+                //         }
+
+                //         // 3. Not found
+                //         if !found {
+                //             println!("{}: not found", cmd);
+                //         }
+                //         continue;
+                //         }
+                // }
+ 
             }, 
 
-            _ => {println!("{}: command not found", command.trim());},
+            _ => {
+                let mut found = false;
+                if let Ok(path_var) = env::var("PATH"){
+                    for dir in path_var.split(":"){
+                        let full_path = Path::new(dir).join(zeroth);
+
+                        if let Ok(metadata) =  fs::metadata(&full_path){
+                            if metadata.permissions().mode() & 0o111 !=0{
+                                let _ = Command::new(&full_path).args(&args[1..]).status();
+
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if !found {
+                    println!("{}: command not found", zeroth);
+                }
+
+            },
             
         }
 
@@ -102,3 +156,5 @@ fn main() {
     }
     
 }
+
+//
