@@ -5,6 +5,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
+use std::os::unix::process::CommandExt;
 
 
 fn main() {
@@ -129,7 +130,7 @@ fn main() {
 
                         if let Ok(metadata) =  fs::metadata(&full_path){
                             if metadata.permissions().mode() & 0o111 !=0{
-                                let _ = Command::new(&full_path).args(&args[1..]).status();
+                                let _ = Command::new(&full_path).args(&args[0..]).status();
 
                                 found = true;
                                 break;
