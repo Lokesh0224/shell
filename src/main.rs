@@ -130,7 +130,7 @@ fn main() {
 
                         if let Ok(metadata) =  fs::metadata(&full_path){
                             if metadata.permissions().mode() & 0o111 !=0{
-                                let _ = Command::new(&full_path).args(&args[1..]).status();
+                                let _ = Command::new(&full_path).arg0(zeroth).status();
 
                                 found = true;
                                 break;
