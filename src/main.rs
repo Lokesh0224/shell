@@ -1,5 +1,10 @@
 #[allow(unused_imports)] //Do not show warnings if some imports are not used.
 use std::io::{self, Write};
+use std::env;
+use std::fs;
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
+
 
 fn main() {
     loop{
@@ -35,25 +40,41 @@ fn main() {
             }, 
 
             "type" => {
-                //.len() = no.of elements not the index
-                if args.len() <2{ //if its just "type" and nothing else typed in terminal
+                if args.len() < 2 {
                     println!("mention the command.");
                     continue;
                 }
 
                 let cmd = args[1];
 
-                match cmd{
+                // 1. Check builtins
+                match cmd {
                     "echo" | "exit" | "type" => {
                         println!("{} is a shell builtin", cmd);
-                    }, 
-                    
-                    _ => {
-                        println!("{}: not found", cmd);
-                    },
+                        continue;
+                    }
+                    _ => {}
                 }
-                continue;
 
+                // 2. Search in PATH
+                //PATH is about where the OS keeps programs.
+                if let Ok(path_var) = env::var("PATH") {//will give the path of the command
+                    for dir in path_var.split(':') {
+                        let full_path = Path::new(dir).join(cmd);
+
+                        if let Ok(metadata) = fs::metadata(&full_path) {
+                            // Check execute permission
+                            if metadata.permissions().mode() & 0o111 != 0 {
+                                println!("{} is {}", cmd, full_path.display());
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                // 3. Not found
+                println!("{}: not found", cmd);
+                continue;
             }, 
 
             _ => {},
