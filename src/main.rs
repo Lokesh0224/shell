@@ -3,7 +3,7 @@ use std::io::{self, Write};
 use std::env;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
+use std::path::{self, Path, PathBuf};
 use std::process::Command;
 use std::os::unix::process::CommandExt;
 
@@ -50,7 +50,7 @@ fn main() -> std::io::Result<()> {
                 let cmd = args[1];
 
                 // 1. Check builtins
-                if matches!(cmd, "echo" | "exit" | "type" | "pwd"){
+                if matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd"){
                     println!("{} is a shell builtin", cmd);
                     continue;
                 }
@@ -90,6 +90,18 @@ fn main() -> std::io::Result<()> {
             "pwd" =>{
                 let path = env::current_dir()?;
                 println!("{}", path.display());
+            }, 
+            
+            "cd" => {
+                let path = Path::new(&args[1]);
+                if path.is_dir() {
+                    continue;
+                } else {
+                    println!("{}: {}: No such file or directory", &args[0], &args[1]);
+                    continue;
+                }
+                 
+
             }
 
             _ => {
