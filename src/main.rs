@@ -8,7 +8,7 @@ use std::process::Command;
 use std::os::unix::process::CommandExt;
 
 
-fn main() {
+fn main() -> std::io::Result<()> {
     loop{
         print!("$ ");
         io::stdout().flush().unwrap();
@@ -87,12 +87,18 @@ fn main() {
  
             }, 
 
+            "pwd" =>{
+                let path = env::current_dir()?;
+                println!("{}", path.display());
+            }
+
             _ => {
                 let mut found = false;
                 if let Ok(path_var) = env::var("PATH"){
                     for dir in path_var.split(":"){
                         let full_path = Path::new(dir).join(zeroth);
 
+                        //0o111 everyone can execute the file
                         if let Ok(metadata) =  fs::metadata(&full_path){                //checks if the file exist in the path
                             if metadata.permissions().mode() & 0o111 !=0{                         //checks if the file is executable
                                 let _ = Command::new(&full_path)                  //Prepare to execute the file /tmp/custom_exe_7592
@@ -123,6 +129,7 @@ fn main() {
         
         
     }
+    Ok(())
     
 }
 
