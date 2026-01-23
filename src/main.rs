@@ -83,7 +83,55 @@ fn main() {
                 }
 
                 
-                // match cmd {
+                ////11.
+ 
+            }, 
+
+            _ => {
+                let mut found = false;
+                if let Ok(path_var) = env::var("PATH"){
+                    for dir in path_var.split(":"){
+                        let full_path = Path::new(dir).join(zeroth);
+
+                        if let Ok(metadata) =  fs::metadata(&full_path){                //checks if the file exist in the path
+                            if metadata.permissions().mode() & 0o111 !=0{                         //checks if the file is executable
+                                let _ = Command::new(&full_path)                  //Prepare to execute the file /tmp/custom_exe_7592
+                                                .args(&args[1..])                     //are the arguments
+                                                .arg0(zeroth)                    //overrides the {argv[0](/tmp/custom_exe_7592)} to custom_exe_7592
+                                                .status();                                        //run it
+
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if !found {
+                    println!("{}: command not found", zeroth);
+                }
+
+            },
+            
+        }
+
+        // if args[0] =="echo"{
+        //     let output = args[1..].join(" ");
+        //     println!("{}", output);
+        //     continue;
+        // }
+        
+        
+    }
+    
+}
+
+
+
+
+
+//11.
+// match cmd {
                 //     "echo" | "exit" | "type" => {
                 //         println!("{} is a shell builtin", cmd);
                 //         continue;
@@ -119,43 +167,3 @@ fn main() {
                 //         continue;
                 //         }
                 // }
- 
-            }, 
-
-            _ => {
-                let mut found = false;
-                if let Ok(path_var) = env::var("PATH"){
-                    for dir in path_var.split(":"){
-                        let full_path = Path::new(dir).join(zeroth);
-
-                        if let Ok(metadata) =  fs::metadata(&full_path){
-                            if metadata.permissions().mode() & 0o111 !=0{
-                                let _ = Command::new(&full_path).args(&args[1..]).arg0(zeroth).status();
-
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if !found {
-                    println!("{}: command not found", zeroth);
-                }
-
-            },
-            
-        }
-
-        // if args[0] =="echo"{
-        //     let output = args[1..].join(" ");
-        //     println!("{}", output);
-        //     continue;
-        // }
-        
-        
-    }
-    
-}
-
-//
