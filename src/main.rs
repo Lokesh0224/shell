@@ -92,12 +92,23 @@ fn main() -> std::io::Result<()> {
                 println!("{}", path.display());
             }, 
             
+            //Absolute paths, like /usr/local/bin
+            //Relative paths, like ./, ../, ./dir
+            //The ~ (tilde) character
             "cd" => {
                 let path = Path::new(&args[1]);
+                let tilde = args[1];
+
+                if tilde == "~"{
+                    env::home_dir();
+                    continue;
+                }
+                
                 if path.is_dir() {
                     env::set_current_dir(&path)?;
                     continue;
-                } else {
+                }
+                else {
                     println!("{}: {}: No such file or directory", &args[0], &args[1]);
                     continue;
                 }
