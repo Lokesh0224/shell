@@ -89,7 +89,7 @@ fn main() -> std::io::Result<()> {
 
             "pwd" =>{
                 let path = env::current_dir()?;
-                // println!("{}", path.display());
+                println!("{}", path.display());
             }
 
             _ => {
