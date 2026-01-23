@@ -95,6 +95,7 @@ fn main() -> std::io::Result<()> {
             "cd" => {
                 let path = Path::new(&args[1]);
                 if path.is_dir() {
+                    env::set_current_dir(&path)?;
                     continue;
                 } else {
                     println!("{}: {}: No such file or directory", &args[0], &args[1]);
