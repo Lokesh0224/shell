@@ -100,8 +100,11 @@ fn main() -> std::io::Result<()> {
                 let tilde = args[1];
 
                 if tilde == "~"{
-                    env::home_dir();
-                    continue;
+                    if let Ok(home) = env::var("HOME"){
+                        env::set_current_dir(home)?;
+                        continue;
+                    }
+
                 }
                 
                 if path.is_dir() {
