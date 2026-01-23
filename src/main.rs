@@ -50,7 +50,7 @@ fn main() -> std::io::Result<()> {
                 let cmd = args[1];
 
                 // 1. Check builtins
-                if matches!(cmd, "echo" | "exit" | "type"){
+                if matches!(cmd, "echo" | "exit" | "type" | "pwd"){
                     println!("{} is a shell builtin", cmd);
                     continue;
                 }
@@ -89,7 +89,7 @@ fn main() -> std::io::Result<()> {
 
             "pwd" =>{
                 let path = env::current_dir()?;
-                println!("{}", path.display());
+                // println!("{}", path.display());
             }
 
             _ => {
