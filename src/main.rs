@@ -3,10 +3,12 @@ use std::io::{self, Write};
 use std::env;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::{self, Path, PathBuf};
+use std::path::{Path};
 use std::process::Command;
 use std::os::unix::process::CommandExt;
 
+mod parser;
+use parser::parse_input;
 
 fn main() -> std::io::Result<()> {
     loop{
@@ -21,20 +23,26 @@ fn main() -> std::io::Result<()> {
         if bytes_read == 0{
             break;
         }
-         
-        if command.trim() == "exit"{
-            break;
-        }
+        
+        //passing arguments to parser.rs
+        let parsed = parse_input(command.trim());
 
-        let args: Vec<&str> = command.split_whitespace().collect();
-
-        if args.is_empty(){
+        if parsed.is_empty(){
             continue;
         }
+         
+        // if command.trim() == "exit"{
+        //     break;
+        // }
 
+        let args: Vec<&str> = parsed.iter().map(|s| s.as_str()).collect();
         let zeroth = args[0];
 
         match zeroth {
+            "exit" => {
+                break
+            },
+
             "echo" => {
                 let output = args[1..].join(" ");
                 println!("{}", output);
