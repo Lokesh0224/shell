@@ -10,6 +10,9 @@ use std::os::unix::process::CommandExt;
 mod parser;
 use parser::parse_input;
 
+mod stdStreams;
+use stdStreams::Redirection;
+
 fn main() -> std::io::Result<()> {
     loop{
         print!("$ ");
@@ -27,16 +30,27 @@ fn main() -> std::io::Result<()> {
         //passing arguments to parser.rs
         let parsed = parse_input(command.trim());
 
+        //when just enter is pressed
         if parsed.is_empty(){
             continue;
         }
-         
+
+        //Handle stdout redirection
+        let redir= Redirection::parse_streams(parsed);
+    
         // if command.trim() == "exit"{
         //     break;
         // }
 
-        let args: Vec<&str> = parsed.iter().map(|s| s.as_str()).collect();
-        let zeroth = args[0];
+        //let args: Vec<&str> = parsed.iter().map(|s| s.as_str()).collect();
+        let args = &redir.clean_args;
+
+         if args.is_empty() {
+            continue;
+        }
+
+        let zeroth = args[0].as_str();
+        
 
         match zeroth {
             "exit" => {
@@ -45,21 +59,22 @@ fn main() -> std::io::Result<()> {
 
             "echo" => {
                 let output = args[1..].join(" ");
-                println!("{}", output);
+                redir.write_builtin_output(&output);
                 continue;
             }, 
 
             "type" => {
                 if args.len() < 2 {
-                    println!("mention the command.");
+                    redir.write_builtin_output("mention the command.");
                     continue;
                 }
 
-                let cmd = args[1];
+                let cmd = args[1].as_str();
 
                 // 1. Check builtins
                 if matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd"){
-                    println!("{} is a shell builtin", cmd);
+                    let msg = format!("{} is a shell builtin", cmd);
+                    redir.write_builtin_output(&msg);
                     continue;
                 }
 
@@ -77,7 +92,8 @@ fn main() -> std::io::Result<()> {
                             // 0o001 → others execute
 
                             if metadata.permissions().mode() & 0o111 != 0 {
-                                println!("{} is {}", cmd, full_path.display());
+                                let msg = format!("{} is {}", cmd, full_path.display());
+                                redir.write_builtin_output(&msg);
                                 found = true;
                                 break;
                             }
@@ -87,7 +103,8 @@ fn main() -> std::io::Result<()> {
 
                 // 3. Not found
                 if !found {
-                    println!("{}: not found", cmd);
+                    let msg = format!("{}: not found", cmd);
+                    redir.write_builtin_output(&msg);
                 }
 
                 
@@ -97,7 +114,9 @@ fn main() -> std::io::Result<()> {
 
             "pwd" =>{
                 let path = env::current_dir()?;
-                println!("{}", path.display());
+                let msg = path.display().to_string();
+                redir.write_builtin_output(&msg);
+                continue;
             }, 
             
             //Absolute paths, like /usr/local/bin
@@ -105,7 +124,7 @@ fn main() -> std::io::Result<()> {
             //The ~ (tilde) character
             "cd" => {
                 let path = Path::new(&args[1]);
-                let tilde = args[1];
+                let tilde = &args[1];
 
                 if tilde == "~"{
                     if let Ok(home) = env::var("HOME"){
@@ -136,11 +155,14 @@ fn main() -> std::io::Result<()> {
                         //0o111 everyone can execute the file
                         if let Ok(metadata) =  fs::metadata(&full_path){                //checks if the file exist in the path
                             if metadata.permissions().mode() & 0o111 !=0{                         //checks if the file is executable
-                                let _ = Command::new(&full_path)                  //Prepare to execute the file /tmp/custom_exe_7592
-                                                .args(&args[1..])                     //are the arguments
-                                                .arg0(zeroth)                    //overrides the {argv[0](/tmp/custom_exe_7592)} to custom_exe_7592
-                                                .status();                                        //run it
+                                let mut cmd = Command::new(full_path);                 //Prepare to execute the file /tmp/custom_exe_7592
+                                                cmd.args(&args[1..]);                     //are the arguments
+                                                cmd.arg0(&zeroth);                    //overrides the {argv[0](/tmp/custom_exe_7592)} to custom_exe_7592
+                                                //.status();      
+                                                                                  
+                                redir.apply_to_no_builtin(&mut cmd);
 
+                                let _ = cmd.status();                                  //run it
                                 found = true;
                                 break;
                             }
