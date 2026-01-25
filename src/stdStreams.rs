@@ -43,9 +43,10 @@ impl Redirection{
                 .open(file)
                 {
                     writeln!(f, "{}", text).ok();
-                }else{
-                    println!("{}", text);
                 }
+        }
+        else{
+            println!("{}", text);
         }
     }
 
