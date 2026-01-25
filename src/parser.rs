@@ -33,18 +33,22 @@ pub fn parse_input(input: &str) -> Vec<String> {
             // },
 
             '\\' if in_double_quote => {
-                if let Some(next) = chars.next() {
+                if let Some(&next) = chars.peek() {
                     match next {
-                        '"' | '\\' | '\'' => current.push(next),
-                        _ => {
-                            current.push('\\');
+                        '"' | '\\' => {
+                            chars.next();
                             current.push(next);
+                        }
+                        _ => {
+                            // Backslash remains literal
+                            current.push('\\');
                         }
                     }
                 } else {
                     current.push('\\');
                 }
             }
+
 
             '\'' if !in_double_quote =>{
                 in_single_quote = !in_single_quote;
