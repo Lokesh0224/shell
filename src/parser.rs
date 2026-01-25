@@ -18,19 +18,33 @@ pub fn parse_input(input: &str) -> Vec<String> {
             },
 
             //Backslashes in Double Quotes
-            '\\' if in_double_quote =>{
-                if let Some(&next_char) = chars.peek(){
-                    if next_char == '"' || next_char == '\\' || next_char == '\''{
-                        chars.next();
-                        current.push(next_char);
-                    }else{
-                        current.push('\\');
+            // '\\' if in_double_quote =>{
+            //     if let Some(&next_char) = chars.peek(){
+            //         if next_char == '"' || next_char == '\\' || next_char == '\''{
+            //             chars.next();
+            //             current.push(next_char);
+            //         }else{
+            //             current.push('\\');
+            //         }
+            //     }
+            //     else{
+            //         current.push('\\');
+            //     }
+            // },
+
+            '\\' if in_double_quote => {
+                if let Some(next) = chars.next() {
+                    match next {
+                        '"' | '\\' | '\'' => current.push(next),
+                        _ => {
+                            current.push('\\');
+                            current.push(next);
+                        }
                     }
-                }
-                else{
+                } else {
                     current.push('\\');
                 }
-            },
+            }
 
             '\'' if !in_double_quote =>{
                 in_single_quote = !in_single_quote;
