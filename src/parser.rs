@@ -33,21 +33,19 @@ pub fn parse_input(input: &str) -> Vec<String> {
             // },
 
             '\\' if in_double_quote => {
-                if let Some(&next) = chars.peek() {
+                if let Some(next) = chars.next() {
                     match next {
-                        '"' | '\\' => {
-                            chars.next();
-                            current.push(next);
-                        }
+                        '"' | '\\' | '$' | '`' => current.push(next),
                         _ => {
-                            // Backslash remains literal
                             current.push('\\');
+                            current.push(next);
                         }
                     }
                 } else {
                     current.push('\\');
                 }
             }
+
 
 
             '\'' if !in_double_quote =>{
