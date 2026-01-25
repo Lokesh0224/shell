@@ -20,7 +20,7 @@ pub fn parse_input(input: &str) -> Vec<String> {
             //Backslashes in Double Quotes
             '\\' if in_double_quote =>{
                 if let Some(&next_char) = chars.peek(){
-                    if next_char == '"' || next_char == '\\'{
+                    if next_char == '"' || next_char == '\\' || next_char == '\''{
                         chars.next();
                         current.push(next_char);
                     }else{
