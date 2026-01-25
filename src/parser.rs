@@ -15,6 +15,7 @@ pub fn parse_input(input: &str) -> Vec<String> {
                 if let Some(c) = chars.next(){
                     current.push(c);
                 }
+                continue;
             },
 
             //Backslashes in Double Quotes
@@ -44,7 +45,9 @@ pub fn parse_input(input: &str) -> Vec<String> {
                 } else {
                     current.push('\\');
                 }
+                continue;
             }
+
 
 
 
