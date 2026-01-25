@@ -11,6 +11,11 @@ pub fn parse_input(input: &str) -> Vec<String> {
 
     while let Some(c) = chars.next(){
         match c {
+            '\\' if !in_single_quote && !in_double_quote =>{
+                if let Some(c) = chars.next(){
+                    current.push(c);
+                }
+            },
 
             '\'' if !in_double_quote =>{
                 in_single_quote = !in_single_quote;
