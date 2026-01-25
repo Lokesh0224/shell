@@ -15,38 +15,37 @@ pub fn parse_input(input: &str) -> Vec<String> {
                 if let Some(c) = chars.next(){
                     current.push(c);
                 }
-                // continue;
             },
 
             //Backslashes in Double Quotes
-            '\\' if in_double_quote =>{
-                if let Some(&next_char) = chars.peek(){
-                    if next_char == '"' || next_char == '\\' || next_char == '\''{
-                        chars.next();
-                        current.push(next_char);
-                    }else{
-                        current.push('\\');
-                    }
-                }
-                else{
-                    current.push('\\');
-                }
-            },
-
-            // '\\' if in_double_quote => {
-            //     if let Some(next) = chars.next() {
-            //         match next {
-            //             '"' | '\\' | '$' | '`' => current.push(next),
-            //             _ => {
-            //                 current.push('\\');
-            //                 current.push(next);
-            //             }
+            // '\\' if in_double_quote =>{
+            //     if let Some(&next_char) = chars.peek(){
+            //         if next_char == '"' || next_char == '\\' {
+            //             chars.next();
+            //             current.push(next_char);
+            //         }else{
+            //             current.push('\\');
             //         }
-            //     } else {
+            //     }
+            //     else{
             //         current.push('\\');
             //     }
-            //     continue;
             // },
+
+            '\\' if in_double_quote => {
+                if let Some(next) = chars.next() {
+                    match next {
+                        '"' | '\\' | '$' | '`' => current.push(next),
+                        _ => {
+                            current.push('\\');
+                            current.push(next);
+                        }
+                    }
+                } else {
+                    current.push('\\');
+                }
+                //continue;
+            },
 
 
             '\'' if !in_double_quote =>{
