@@ -123,6 +123,11 @@ fn main() -> std::io::Result<()> {
             //Relative paths, like ./, ../, ./dir
             //The ~ (tilde) character
             "cd" => {
+                if args.len() < 2 {
+                    redir.write_builtin_err("cd: missing argument");
+                    continue;
+                }
+
                 let path = Path::new(&args[1]);
                 let tilde = &args[1];
 
@@ -139,7 +144,7 @@ fn main() -> std::io::Result<()> {
                     continue;
                 }
                 else {
-                    println!("{}: {}: No such file or directory", &args[0], &args[1]);
+                    redir.write_builtin_err(&format!("{}: {}: No such file or directory", &args[0], &args[1]));
                     continue;
                 }
                  
@@ -156,8 +161,8 @@ fn main() -> std::io::Result<()> {
                         if let Ok(metadata) =  fs::metadata(&full_path){                //checks if the file exist in the path
                             if metadata.permissions().mode() & 0o111 !=0{                         //checks if the file is executable
                                 let mut cmd = Command::new(full_path);                 //Prepare to execute the file /tmp/custom_exe_7592
-                                                cmd.args(&args[1..]);                     //are the arguments
-                                                cmd.arg0(&zeroth);                    //overrides the {argv[0](/tmp/custom_exe_7592)} to custom_exe_7592
+                                cmd.args(&args[1..]);                                               //are the arguments
+                                cmd.arg0(&zeroth);                                             //overrides the {argv[0](/tmp/custom_exe_7592)} to custom_exe_7592
                                                 //.status();      
                                                                                   
                                 redir.apply_to_no_builtin(&mut cmd);
@@ -170,8 +175,9 @@ fn main() -> std::io::Result<()> {
                     }
                 }
 
+                //this err is produced by the shell so we're using builtin err fn.
                 if !found {
-                    println!("{}: command not found", zeroth);
+                    redir.write_builtin_err(&format!("{}: command not found", zeroth));
                 }
 
             },
