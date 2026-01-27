@@ -52,6 +52,24 @@ impl Redirection{
         Self {clean_args, stdout_file, stderr_file}
     }
 
+    pub fn prepare_redirections(&self){
+        if let Some(file) = &self.stdout_file{
+            let _ = OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(file);
+        }
+
+        if let Some(file) = &self.stderr_file{
+            let _ = OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(file);
+        }
+    }
+
     //echo hello > output.txt
     pub fn write_builtin_output(&self, text: &str){
         if let Some(file) = &self.stdout_file{
@@ -83,7 +101,7 @@ impl Redirection{
                 }
         }
         else{
-            println!("{}", text);
+            eprintln!("{}", text);
         }
     }
 

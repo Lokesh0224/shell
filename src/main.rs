@@ -37,6 +37,7 @@ fn main() -> std::io::Result<()> {
 
         //Handle stdout redirection
         let redir= Redirection::parse_streams(parsed);
+        redir.prepare_redirections(); 
     
         // if command.trim() == "exit"{
         //     break;
