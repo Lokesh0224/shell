@@ -3,13 +3,16 @@
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::process::{Command, Stdio};
+// use std::result::Result::Ok;
+
 
 pub struct Redirection{
     pub clean_args: Vec<String>, 
     pub stdout_file: Option<String>,
     pub stderr_file: Option<String>,
     pub stdout_append: bool, 
-    //pub stdapnderr_file: Option<String>,
+    pub stderr_append: bool,
+    
 }
 
 impl Redirection{
@@ -18,7 +21,7 @@ impl Redirection{
         let mut stdout_file = None;
         let mut stderr_file = None;
         let mut stdout_append = false;
-        //let mut stdapnderr_file = None;
+        let mut stderr_append = false;
 
         let mut i =0;
         while i <args.len() {
@@ -26,7 +29,7 @@ impl Redirection{
                 ">" | "1>" =>{
                     if i+1 < args.len(){
                         stdout_file = Some(args[i+1].clone());
-                        stdout_append = false;
+                        stdout_append = false;   //truncate mode 
                         i+=2;
                     }else{
                         eprintln!("Syntax error: no file after >");
@@ -37,6 +40,7 @@ impl Redirection{
                 "2>" => {
                     if i+1 < args.len(){
                         stderr_file = Some(args[i+1].clone());
+                        stderr_append = false;
                         i += 2;
                     }
                     else{
@@ -48,18 +52,19 @@ impl Redirection{
                 ">>" | "1>>" => {
                     if i+1 <args.len(){
                         stdout_file = Some(args[i+1].clone());
-                        stdout_append = true;
-
+                        stdout_append = true;  //append mode
                         i += 2;
                     }
                 },
 
-                // "2>>" => {
-                //     if i+1 <args.len(){
-                //         stdapnderr_file = Some(args[i+1].clone());
-                //         i += 2;
-                //     }
-                // }
+                "2>>" => {
+                    if i+1 <args.len(){
+                        stderr_file = Some(args[i+1].clone());
+                        stderr_append = true;  //append mode
+                        i += 2;
+                    }
+                }
+
 
                 _ => {
                     clean_args.push(args[i].clone());
@@ -70,7 +75,7 @@ impl Redirection{
             
         }
 
-        Self {clean_args, stdout_file, stderr_file, stdout_append}
+        Self {clean_args, stdout_file, stderr_file, stdout_append, stderr_append}
     }
 
     pub fn prepare_redirections(&self){
@@ -89,11 +94,17 @@ impl Redirection{
         }
 
         if let Some(file) = &self.stderr_file{
-            let _ = OpenOptions::new()
-                    .create(true)
-                    .write(true)
-                    .truncate(true)
-                    .open(file);
+            let mut opts = OpenOptions::new();
+            opts.create(true).write(true);
+
+            if self.stderr_append{
+                opts.append(true);
+            }
+            else{
+                opts.truncate(true);
+            }
+            let _ = opts.open(file);
+
         }
     }
 
@@ -115,14 +126,12 @@ impl Redirection{
     //Built-ins produce strings.
     pub fn write_builtin_err(&self, text: &str){
         if let Some(file) = &self.stderr_file{
-            if let Ok(mut f) = OpenOptions::new()
-                .create(true)
-                .write(true)
-                .truncate(true)
-                .open(file)
-                {
-                    writeln!(f, "{}", text).ok(); //here we know the output string, so we write directly into the file
-                }
+            let mut opts = OpenOptions::new();
+            opts.append(true);
+            
+            if let Ok(mut f) = opts.open(file){
+                writeln!(f, "{}", text).ok(); //here we know the output string, so we write directly into the file
+            }
         }
         else{
             eprintln!("{}", text);
@@ -149,14 +158,23 @@ impl Redirection{
         }
 
         if let Some(file) = &self.stderr_file{
-            if let Ok(f) = OpenOptions::new()
-                .create(true)
-                .write(true)
-                .truncate(true)
-                .open(file)
-                {
-                    cmd.stderr(Stdio::from(f));                 //When this program runs, anything it writes to stderr should go into this file instead of the terminal.
-                }
+            let mut opts = OpenOptions::new();
+                opts.create(true).write(true);
+
+            if self.stderr_append{
+                opts.append(true);
+            }else{
+                opts.truncate(true);
+            }
+
+            if let Ok(f) = opts.open(file){
+                cmd.stderr(Stdio::from(f));                 //When this program runs, anything it writes to stderr should go into this file instead of the terminal.
+            }
         }
     }
 }
+
+//We open the file once to make sure it exists and is in the right state, 
+//then we open it again because built-in commands write to the file directly themselves, 
+//while external commands run as child processes and need the shell to pass them their own open file handle 
+//so that child process can send its output into the file.
