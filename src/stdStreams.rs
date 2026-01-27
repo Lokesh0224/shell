@@ -72,7 +72,7 @@ impl Redirection{
     //ex: echo hello > out.txt
     //Built-ins produce strings.
     pub fn write_builtin_err(&self, text: &str){
-        if let Some(file) = &self.stdout_file{
+        if let Some(file) = &self.stderr_file{
             if let Ok(mut f) = OpenOptions::new()
                 .create(true)
                 .write(true)
