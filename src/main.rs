@@ -47,7 +47,7 @@ fn main() -> std::io::Result<()> {
         //     break;
         // }
 
-        let readline = rl.readline("l@LK:$ ");
+        let readline = rl.readline("$ ");
 
         match readline {
             Ok(command) => {
