@@ -118,7 +118,7 @@ impl Redirection{
             }
         }
         else{
-            println!("{}", text);
+            println!("{} ", text);
         }
     }
 
