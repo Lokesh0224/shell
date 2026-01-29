@@ -34,7 +34,7 @@ impl ShellCompleter {
                                 // Check if executable
                                 if let Ok(metadata) = entry.metadata() {
                                     if metadata.permissions().mode() & 0o111 != 0 {
-                                        candidates.insert(format!("{}", file_name));
+                                        candidates.insert(format!("{} ", file_name));
                                     }
                                 }
                             }
