@@ -34,7 +34,7 @@ impl Completer for ShellCompleter {
             if builtin.starts_with(word) {
                 candidates.push(Pair {
                     display: builtin.to_string(),
-                    replacement: format!("{} ", builtin),
+                    replacement: format!("{}", builtin),
                 });
             }
         }
