@@ -5,10 +5,51 @@ use rustyline::validate::Validator;
 use rustyline::{Helper, Context, Result};
 use std::env;
 use std::fs;
-use std::path::Path;
 use std::os::unix::fs::PermissionsExt;
+use std::collections::HashSet;
+
 
 pub struct ShellCompleter;
+
+impl ShellCompleter {
+    // Helper function to get all matching candidates
+    fn get_candidates(&self, word: &str) -> Vec<String> {
+        let mut candidates = HashSet::new();
+        
+        // Check builtins
+        let builtins = ["echo", "exit"];
+        for builtin in builtins {
+            if builtin.starts_with(word) && builtin != word {
+                candidates.insert(builtin.to_string());
+            }
+        }
+        
+        // Check PATH for executables
+        if let Ok(path_var) = env::var("PATH") {
+            for dir in path_var.split(':') {
+                if let Ok(entries) = fs::read_dir(dir) {
+                    for entry in entries.flatten() {
+                        if let Ok(file_name) = entry.file_name().into_string() {
+                            if file_name.starts_with(word) && file_name != word {
+                                // Check if executable
+                                if let Ok(metadata) = entry.metadata() {
+                                    if metadata.permissions().mode() & 0o111 != 0 {
+                                        candidates.insert(file_name);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        let mut result: Vec<String> = candidates.into_iter().collect();
+        result.sort();
+        result
+    }
+}
+
 
 impl Completer for ShellCompleter {
     type Candidate = Pair;
@@ -18,7 +59,7 @@ impl Completer for ShellCompleter {
         line: &str,
         pos: usize,
         _ctx: &rustyline::Context<'_>,
-    ) -> rustyline::Result<(usize, Vec<Pair>)> {
+    ) -> Result<(usize, Vec<Pair>)> {
         // Get the word being completed (before cursor)
         let word = &line[..pos];
         
@@ -27,47 +68,17 @@ impl Completer for ShellCompleter {
             return Ok((pos, vec![]));
         }
         
-        let builtins = ["echo", "exit"];
-        let mut candidates = Vec::new();
+        let mut candidates = self.get_candidates(word);
         
-        for builtin in builtins {
-            if builtin.starts_with(word) {
-                candidates.push(Pair {
-                    display: builtin.to_string(),
-                    replacement: format!("{} ", builtin),
-                });
-            }
-        }
-
-        if let Ok(path_var) = env::var("PATH") {
-            for dir in path_var.split(':') {
-                
-                if let Ok(entries) = fs::read_dir(dir) {
-                    for entry in entries {
-                        if let Ok(entry) = entry {
-                            let file_name = entry.file_name();
-                            
-                            if let Some(name) = file_name.to_str() {
-                                if name.starts_with(word) && name != word {
-                                    
-                                    
-                                    if let Ok(metadata) = entry.metadata() {
-                                        if metadata.permissions().mode() & 0o111 != 0 {
-                                            candidates.push(Pair {
-                                                display: name.to_string(),
-                                                replacement: format!("{} ", name),
-                                            });
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-        }
-    }   
+        let pairs: Vec<Pair> = candidates
+            .into_iter()
+            .map(|c| Pair {
+                display: c.clone(),
+                replacement: c,
+            })
+            .collect();
         
-        Ok((0, candidates))
+        Ok((0, pairs))
     }
 }
 

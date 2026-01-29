@@ -6,11 +6,14 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path};
 use std::process::Command;
 use std::os::unix::process::CommandExt;
+use std::collections::HashSet;
+
+
 
 // Rustyline imports for version 17.x
 use rustyline::error::ReadlineError;
-use rustyline::Config;
-use rustyline::config::CompletionType;
+use rustyline::{Config, Editor};
+use rustyline::config::{CompletionType, BellStyle};
 
 mod parser;
 use parser::parse_input;
@@ -21,14 +24,50 @@ use stdStreams::Redirection;
 mod autocomplete;
 use autocomplete::ShellCompleter;
 
+fn get_completions(word: &str) -> Vec<String> {
+    let mut candidates = HashSet::new();
+    
+    // Check builtins
+    let builtins = ["echo", "exit"];
+    for builtin in builtins {
+        if builtin.starts_with(word) && builtin != word {
+            candidates.insert(builtin.to_string());
+        }
+    }
+    
+    // Check PATH for executables
+    if let Ok(path_var) = env::var("PATH") {
+        for dir in path_var.split(':') {
+            if let Ok(entries) = fs::read_dir(dir) {
+                for entry in entries.flatten() {
+                    if let Ok(file_name) = entry.file_name().into_string() {
+                        if file_name.starts_with(word) && file_name != word {
+                            if let Ok(metadata) = entry.metadata() {
+                                if metadata.permissions().mode() & 0o111 != 0 {
+                                    candidates.insert(file_name);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    let mut result: Vec<String> = candidates.into_iter().collect();
+    result.sort();
+    result
+}
+
 fn main() -> std::io::Result<()> {
     let config = Config::builder()
                         .completion_type(CompletionType::List)
+                        .bell_style(BellStyle::Audible)
                         .build();
 
     // Create editor with helper directly
     let h = ShellCompleter;
-    let mut rl = rustyline::Editor::with_config(config).map_err(|e| {
+    let mut rl = Editor::with_config(config).map_err(|e| {
         std::io::Error::new(std::io::ErrorKind::Other, e)
     })?;
     rl.set_helper(Some(h)); 
