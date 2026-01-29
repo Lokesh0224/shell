@@ -74,7 +74,7 @@ impl Completer for ShellCompleter {
             .into_iter()
             .map(|c| Pair {
                 display: c.clone(),
-                replacement: c,
+                replacement: format!("{} ", c),
             })
             .collect();
         
