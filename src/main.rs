@@ -31,7 +31,7 @@ fn get_completions(word: &str) -> Vec<String> {
     let builtins = ["echo", "exit"];
     for builtin in builtins {
         if builtin.starts_with(word) && builtin != word {
-            candidates.insert(builtin.to_string());
+            candidates.insert(format!("{} ", builtin));
         }
     }
     
@@ -44,7 +44,7 @@ fn get_completions(word: &str) -> Vec<String> {
                         if file_name.starts_with(word) && file_name != word {
                             if let Ok(metadata) = entry.metadata() {
                                 if metadata.permissions().mode() & 0o111 != 0 {
-                                    candidates.insert(file_name);
+                                    candidates.insert(format!("{} ", file_name));
                                 }
                             }
                         }
