@@ -34,7 +34,7 @@ impl Completer for ShellCompleter {
             if builtin.starts_with(word) {
                 candidates.push(Pair {
                     display: builtin.to_string(),
-                    replacement: format!("{}", builtin),
+                    replacement: format!("{} ", builtin),
                 });
             }
         }
@@ -55,7 +55,7 @@ impl Completer for ShellCompleter {
                                         if metadata.permissions().mode() & 0o111 != 0 {
                                             candidates.push(Pair {
                                                 display: name.to_string(),
-                                                replacement: format!("{}", name),
+                                                replacement: format!("{} ", name),
                                             });
                                         }
                                     }
