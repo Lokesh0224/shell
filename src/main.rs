@@ -9,7 +9,7 @@ use std::os::unix::process::CommandExt;
 
 // Rustyline imports for version 17.x
 use rustyline::error::ReadlineError;
-use rustyline::{Config};
+use rustyline::Config;
 use rustyline::config::CompletionType;
 
 mod parser;
@@ -31,7 +31,7 @@ fn main() -> std::io::Result<()> {
     let mut rl = rustyline::Editor::with_config(config).map_err(|e| {
         std::io::Error::new(std::io::ErrorKind::Other, e)
     })?;
-    rl.set_helper(Some(h));
+    rl.set_helper(Some(h)); 
 
 
     loop{

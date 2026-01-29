@@ -3,6 +3,10 @@ use rustyline::hint::Hinter;
 use rustyline::highlight::Highlighter;
 use rustyline::validate::Validator;
 use rustyline::{Helper, Context, Result};
+use std::env;
+use std::fs;
+use std::path::Path;
+use std::os::unix::fs::PermissionsExt;
 
 pub struct ShellCompleter;
 
@@ -34,6 +38,34 @@ impl Completer for ShellCompleter {
                 });
             }
         }
+
+        if let Ok(path_var) = env::var("PATH") {
+            for dir in path_var.split(':') {
+                
+                if let Ok(entries) = fs::read_dir(dir) {
+                    for entry in entries {
+                        if let Ok(entry) = entry {
+                            let file_name = entry.file_name();
+                            
+                            if let Some(name) = file_name.to_str() {
+                                if name.starts_with(word) && name != word {
+                                    
+                                    
+                                    if let Ok(metadata) = entry.metadata() {
+                                        if metadata.permissions().mode() & 0o111 != 0 {
+                                            candidates.push(Pair {
+                                                display: name.to_string(),
+                                                replacement: name.to_string(),
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        }
+    }   
         
         Ok((0, candidates))
     }
