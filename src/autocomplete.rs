@@ -20,7 +20,7 @@ impl ShellCompleter {
         let builtins = ["echo", "exit"];
         for builtin in builtins {
             if builtin.starts_with(word) && builtin != word {
-                candidates.insert(format!("{} ", builtin));
+                candidates.insert(builtin.to_string());
             }
         }
         
@@ -34,7 +34,7 @@ impl ShellCompleter {
                                 // Check if executable
                                 if let Ok(metadata) = entry.metadata() {
                                     if metadata.permissions().mode() & 0o111 != 0 {
-                                        candidates.insert(format!("{}", file_name));
+                                        candidates.insert(file_name);
                                     }
                                 }
                             }
