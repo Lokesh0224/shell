@@ -13,7 +13,7 @@ pub struct ShellCompleter;
 
 impl ShellCompleter {
     // Helper function to get all matching candidates
-    fn get_candidates(&self, word: &str) -> Vec<String> {
+    pub fn get_candidates(&self, word: &str) -> Vec<String> {
         let mut candidates = HashSet::new();
         
         // Check builtins

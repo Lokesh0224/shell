@@ -24,41 +24,6 @@ use stdStreams::Redirection;
 mod autocomplete;
 use autocomplete::ShellCompleter;
 
-fn get_completions(word: &str) -> Vec<String> {
-    let mut candidates = HashSet::new();
-    
-    // Check builtins
-    let builtins = ["echo", "exit"];
-    for builtin in builtins {
-        if builtin.starts_with(word) && builtin != word {
-            candidates.insert(format!("{} ", builtin));
-        }
-    }
-    
-    // Check PATH for executables
-    if let Ok(path_var) = env::var("PATH") {
-        for dir in path_var.split(':') {
-            if let Ok(entries) = fs::read_dir(dir) {
-                for entry in entries.flatten() {
-                    if let Ok(file_name) = entry.file_name().into_string() {
-                        if file_name.starts_with(word) && file_name != word {
-                            if let Ok(metadata) = entry.metadata() {
-                                if metadata.permissions().mode() & 0o111 != 0 {
-                                    candidates.insert(format!("{} ", file_name));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    let mut result: Vec<String> = candidates.into_iter().collect();
-    result.sort();
-    result
-}
-
 fn main() -> std::io::Result<()> {
     let config = Config::builder()
                         .completion_type(CompletionType::List)
