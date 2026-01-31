@@ -64,7 +64,12 @@ fn main() -> std::io::Result<()> {
                     continue;
                 }
 
-                
+                // Check if this is a pipeline FIRST
+                if command.contains('|'){
+                    let pipeline_command = parser::parse_pipeline(command.trim());
+                    pipeline::execute_pipeline(pipeline_command)?;
+                    continue;
+                }
                 //passing arguments to parser.rs
                 let parsed = parse_input(command.trim());
 

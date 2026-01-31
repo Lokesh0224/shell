@@ -27,11 +27,11 @@ fn execute_single_command(args: &[String]) -> std::io::Result<()> {
         return Ok(());
     }
     
-    let mut cmd = Command::new(&args[0]);
-    if args.len() > 1 {
+    let mut cmd = Command::new(&args[0]);//creates a new process
+    if args.len() > 1 { //this coluld be possibly none, we already did a check
         cmd.args(&args[1..]);
     }
-    cmd.status()?;
+    cmd.status()?;//run it
     Ok(())
 }
 
