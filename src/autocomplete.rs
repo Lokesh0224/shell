@@ -14,8 +14,7 @@ pub struct ShellCompleter;
 impl ShellCompleter {
     // Helper function to get all matching candidates
     pub fn get_candidates(&self, word: &str) -> Vec<String> {
-        let mut candidates = HashSet::new();
-        
+        let mut candidates = HashSet::new();    
         // Check builtins
         let builtins = ["echo", "exit"];
         for builtin in builtins {
@@ -78,7 +77,7 @@ impl Completer for ShellCompleter {
             })
             .collect();
         
-        Ok((0, pairs))
+        Ok((0, pairs)) //(start, matches)
     }
 }
 

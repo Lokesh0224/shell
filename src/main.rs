@@ -24,8 +24,12 @@ use stdStreams::Redirection;
 mod autocomplete;
 use autocomplete::ShellCompleter;
 
+mod pipeline;
+use pipeline::execute_pipeline;
+
 fn main() -> std::io::Result<()> {
-    let config = Config::builder()
+    //builder will set all the values and config is the final product, imagine it as ordering over the screen(Burger) ad final product(Burger)
+    let config = Config::builder()//this returns Builder, and with this builder we're setting things up
                         .completion_type(CompletionType::List)
                         .bell_style(BellStyle::Audible)
                         .build();
@@ -59,6 +63,8 @@ fn main() -> std::io::Result<()> {
                 if command.trim().is_empty() {
                     continue;
                 }
+
+                
                 //passing arguments to parser.rs
                 let parsed = parse_input(command.trim());
 

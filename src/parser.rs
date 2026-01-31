@@ -70,6 +70,8 @@ pub fn parse_input(input: &str) -> Vec<String> {
 
             }, 
 
+            
+
             _ => {
                 current.push(c);
             }
@@ -81,4 +83,17 @@ pub fn parse_input(input: &str) -> Vec<String> {
     }
 
     args
+}
+
+
+//Pipeline 
+
+pub fn parse_pipeline(input: &str) -> Vec<Vec<String>> {
+    // Split by '|' first
+    let parts: Vec<&str> = input.split('|').collect();
+    
+    // Parse each part
+    parts.into_iter()
+        .map(|part| parse_input(part.trim()))
+        .collect()
 }
