@@ -1,12 +1,12 @@
-use std::process::{Command, Stdio};
+use std::process::{Command, Output};
 use std::os::unix::process::CommandExt;
-use std::os::unix::io::{AsRawFd, FromRawFd};
 use nix::unistd::{pipe, fork, ForkResult};
 use nix::sys::wait::waitpid;
+use std::env;
+use std::path::Path;
+use std::fs;
+use std::os::unix::fs::PermissionsExt;
 
-fn is_builtin(cmd: &str) -> bool {
-    matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd")
-}
 
 pub fn execute_pipeline(commands: Vec<Vec<String>>) -> std::io::Result<()> {
     if commands.is_empty() {
@@ -28,16 +28,96 @@ pub fn execute_pipeline(commands: Vec<Vec<String>>) -> std::io::Result<()> {
     Ok(())
 }
 
+fn is_builtin(cmd: &str) -> bool {
+    matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd")
+}
+
+fn find_executable(cmd: &str) -> Option<String> {
+    if cmd.contains('/') {
+        if Path::new(cmd).exists() {
+            return Some(cmd.to_string());
+        }
+        return None;
+    }
+    
+    if let Ok(path_var) = env::var("PATH") {
+        for dir in path_var.split(':') {
+            let full_path = Path::new(dir).join(cmd);
+            if let Ok(metadata) = fs::metadata(&full_path) {
+                if metadata.permissions().mode() & 0o111 != 0 {
+                    return Some(full_path.to_string_lossy().to_string());
+                }
+            }
+        }
+    }
+    
+    None
+}
+
+
+//to execute the builtins 
+fn execute_builtin(args: &[String]) -> String {
+    if args.is_empty() {
+        return String::new();
+    }
+    
+    match args[0].as_str() {
+        "echo" => {
+            args[1..].join(" ")
+        },
+        "pwd" => {
+            if let Ok(path) = std::env::current_dir() {
+                path.display().to_string()
+            } else {
+                String::new()
+            }
+        },
+        "type" => {
+            if args.len() < 2 {
+                return "mention the command.".to_string();
+            }
+            
+            let cmd = &args[1];
+            
+            // Check if it's a builtin
+            if is_builtin(cmd) {
+                return format!("{} is a shell builtin", cmd);
+            }
+            
+            // Search in PATH
+            if let Some(path) = find_executable(cmd) {
+                return format!("{} is {}", cmd, path);
+            }
+            
+            format!("{}: not found", cmd)
+        },
+        _ => String::new()
+    }
+}
+
 fn execute_single_command(args: &[String]) -> std::io::Result<()> {
     if args.is_empty() {
         return Ok(());
     }
-    
-    let mut cmd = Command::new(&args[0]);//creates a new process
-    if args.len() > 1 { //this coluld be possibly none, we already did a check
-        cmd.args(&args[1..]);
+
+    if is_builtin(&args[0]){
+        let output = execute_builtin(args);
+        if !output.is_empty(){
+            println!("{}", output);
+        }
+        return Ok(());
     }
-    cmd.status()?;//run it
+    
+    if let Some(executable) = find_executable(&args[0]){
+        let mut cmd = Command::new(executable);//creates a new process
+        if args.len() > 1 { //this coluld be possibly none, we already did a check
+            cmd.args(&args[1..]);
+        }
+        cmd.arg0(&args[0]);
+        cmd.status()?;//run it
+    } else{
+        eprintln!("{}: command not found", args[0]);
+    }
     Ok(())
 }
 
@@ -47,6 +127,9 @@ fn execute_two_command_pipeline(cmd1_args: &[String], cmd2_args: &[String]) -> s
     if cmd1_args.is_empty() || cmd2_args.is_empty() {
         return Ok(());
     }
+
+    let cmd1_is_builtin = is_builtin(&cmd1_args[0]);
+    let cmd2_is_builtin = is_builtin(&cmd2_args[0]);
     
     // 1.Create a pipe 
     //command1 --> (stdout) ----> [PIPE] ----> (stdin) --> command2
@@ -66,16 +149,24 @@ fn execute_two_command_pipeline(cmd1_args: &[String], cmd2_args: &[String]) -> s
             nix::unistd::dup2(write_fd, 1).ok(); // 1 = stdout
             nix::unistd::close(write_fd).ok();
             
-            // Execute command
-            let mut cmd = Command::new(&cmd1_args[0]);
-            if cmd1_args.len() > 1 {
-                cmd.args(&cmd1_args[1..]);
+            if cmd1_is_builtin {
+                let output = execute_builtin(cmd1_args);
+                println!("{}", output);
+                std::process::exit(0); //code 0 means success
+            }else{
+                if let Some(executable) = find_executable(&cmd1_args[0]){
+                    // Execute command
+                    let mut cmd = Command::new(&executable);
+                    if cmd1_args.len() > 1 {
+                        cmd.args(&cmd1_args[1..]);
+                    }
+                    cmd.arg0(&cmd1_args[0]);
+                    //replaces the current process (this child created by fork) with the new program
+                    cmd.exec(); 
+                }
             }
-
-            //replaces the current process (this child created by fork) with the new program
-            cmd.exec(); 
             
-            std::process::exit(1); // Should never reach here
+            std::process::exit(1); // Should never reach here means failure
         }
         Ok(ForkResult::Parent { child: child1 }) => {
             // Fork second command
@@ -89,14 +180,22 @@ fn execute_two_command_pipeline(cmd1_args: &[String], cmd2_args: &[String]) -> s
                     nix::unistd::dup2(read_fd, 0).ok(); // 0 = stdin
                     nix::unistd::close(read_fd).ok();
                     
-                    // Execute command
-                    let mut cmd = Command::new(&cmd2_args[0]); //new process 
-                    if cmd2_args.len() > 1 {
-                        cmd.args(&cmd2_args[1..]);
+                    if cmd2_is_builtin{
+                        let output = execute_builtin(cmd2_args);
+                        println!("{}", output);
+                        std::process::exit(0);
+                    }else{
+                        if let Some(executable) = find_executable(&cmd2_args[0]){
+                            // Execute command
+                            let mut cmd = Command::new(&cmd2_args[0]); //new process 
+                            if cmd2_args.len() > 1 {
+                                cmd.args(&cmd2_args[1..]);
+                            }
+                            cmd.arg0(&cmd2_args[0]);
+                            //replaces the current process (this child created by fork) with the new program 
+                            cmd.exec(); //maps to the OS execvp call
+                        }
                     }
-
-                    //replaces the current process (this child created by fork) with the new program 
-                    cmd.exec(); //maps to the OS execvp call
                     
                     //safety brake so a failed exec() child doesn’t accidentally keep running your shell logic.
                     std::process::exit(1);
