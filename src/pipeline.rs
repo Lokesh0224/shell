@@ -1,6 +1,8 @@
 use std::process::{Command, Stdio};
 use std::os::unix::process::CommandExt;
 use std::os::unix::io::{AsRawFd, FromRawFd};
+use nix::unistd::{pipe, fork, ForkResult};
+use nix::sys::wait::waitpid;
 
 pub fn execute_pipeline(commands: Vec<Vec<String>>) -> std::io::Result<()> {
     if commands.is_empty() {
@@ -36,23 +38,24 @@ fn execute_single_command(args: &[String]) -> std::io::Result<()> {
 }
 
 fn execute_two_command_pipeline(cmd1_args: &[String], cmd2_args: &[String]) -> std::io::Result<()> {
-    use nix::unistd::{pipe, fork, ForkResult};
-    use nix::sys::wait::waitpid;
+    
     
     if cmd1_args.is_empty() || cmd2_args.is_empty() {
         return Ok(());
     }
     
-    // Create a pipe
-    let (read_fd, write_fd) = pipe().map_err(|e| {
+    // 1.Create a pipe 
+    //command1 --> (stdout) ----> [PIPE] ----> (stdin) --> command2
+    //       write_fd  ----> [PIPE] ----> read_fd
+    let (read_fd, write_fd) = pipe().map_err(|e| {//pipe is a byte stream between two process
         std::io::Error::new(std::io::ErrorKind::Other, e)
     })?;
     
     // Fork first command
-    match unsafe { fork() } {
+    match unsafe { fork() } { //Parent, Child
         Ok(ForkResult::Child) => {
             // In child process for cmd1
-            // Close read end (we only write)
+            // Close read end (initially we need to write)
             nix::unistd::close(read_fd).ok();
             
             // Redirect stdout to write end of pipe
@@ -64,13 +67,15 @@ fn execute_two_command_pipeline(cmd1_args: &[String], cmd2_args: &[String]) -> s
             if cmd1_args.len() > 1 {
                 cmd.args(&cmd1_args[1..]);
             }
-            cmd.exec(); // This replaces the process
+
+            //replaces the current process (this child created by fork) with the new program
+            cmd.exec(); 
             
             std::process::exit(1); // Should never reach here
         }
         Ok(ForkResult::Parent { child: child1 }) => {
             // Fork second command
-            match unsafe { fork() } {
+            match unsafe { fork() } {//Parent, Child
                 Ok(ForkResult::Child) => {
                     // In child process for cmd2
                     // Close write end (we only read)
@@ -81,15 +86,19 @@ fn execute_two_command_pipeline(cmd1_args: &[String], cmd2_args: &[String]) -> s
                     nix::unistd::close(read_fd).ok();
                     
                     // Execute command
-                    let mut cmd = Command::new(&cmd2_args[0]);
+                    let mut cmd = Command::new(&cmd2_args[0]); //new process 
                     if cmd2_args.len() > 1 {
                         cmd.args(&cmd2_args[1..]);
                     }
-                    cmd.exec();
+
+                    //replaces the current process (this child created by fork) with the new program 
+                    cmd.exec(); //maps to the OS execvp call
                     
+                    //safety brake so a failed exec() child doesn’t accidentally keep running your shell logic.
                     std::process::exit(1);
                 }
                 Ok(ForkResult::Parent { child: child2 }) => {
+                    
                     // In parent process
                     // Close both ends of pipe
                     nix::unistd::close(read_fd).ok();
@@ -111,3 +120,18 @@ fn execute_two_command_pipeline(cmd1_args: &[String], cmd2_args: &[String]) -> s
     
     Ok(())
 }
+
+//          KERNEL PIPE BUFFER
+//      ┌────────────────────────┐
+// cmd1 │ write_fd →  [ bytes ]  │ read_fd → cmd2
+//      └────────────────────────┘
+
+// | Step                | What happens                               |
+// | ------------------- | ------------------------------------------ |
+// | `pipe()`            | Kernel creates shared buffer               |
+// | `dup2(write_fd, 1)` | cmd1 writes into that buffer               |
+// | `dup2(read_fd, 0)`  | cmd2 reads from that buffer                |
+// | `exec()`            | Programs start using stdin/stdout normally |
+
+
+//so the cmd1 and cmd2 exactly meets after both dup2 calls have executed.
