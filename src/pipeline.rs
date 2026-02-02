@@ -4,6 +4,10 @@ use std::os::unix::io::{AsRawFd, FromRawFd};
 use nix::unistd::{pipe, fork, ForkResult};
 use nix::sys::wait::waitpid;
 
+fn is_builtin(cmd: &str) -> bool {
+    matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd")
+}
+
 pub fn execute_pipeline(commands: Vec<Vec<String>>) -> std::io::Result<()> {
     if commands.is_empty() {
         return Ok(());
