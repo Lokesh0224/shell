@@ -47,6 +47,17 @@ fn main() -> std::io::Result<()> {
     //Track history
     let mut last_written_history_count = 0;
 
+    if let Ok(histfile_path) = env::var("HISTFILE"){
+        if let Ok(contents) = fs::read_to_string(&histfile_path){
+            for line in contents.lines(){
+                if !line.trim().is_empty(){
+                    rl.add_history_entry(line).ok();
+                }
+            }
+            last_written_history_count = rl.history().len();
+        }
+    }
+
 
 
     loop{
