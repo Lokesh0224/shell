@@ -116,7 +116,7 @@ fn main() -> std::io::Result<()> {
                         let cmd = args[1].as_str();
 
                         // 1. Check builtins
-                        if matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd"){
+                        if matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd" | "history"){
                             let msg = format!("{} is a shell builtin", cmd);
                             redir.write_builtin_output(&msg);
                             continue;
@@ -193,7 +193,14 @@ fn main() -> std::io::Result<()> {
                         }
                         
 
-                    }
+                    },
+
+                    // "history" => {
+                    //     let history_iter = rl.history();
+                    //     for(idx, entry) in history_iter.iter().enumerate(){
+                            
+                    //     }
+                    // }, 
 
                     _ => {
                         let mut found = false;

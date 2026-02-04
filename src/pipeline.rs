@@ -31,7 +31,7 @@ pub fn execute_pipeline(commands: Vec<Vec<String>>) -> std::io::Result<()> {
 }
 
 fn is_builtin(cmd: &str) -> bool {
-    matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd")
+    matches!(cmd, "echo" | "exit" | "type" | "pwd" | "cd" | "history")
 }
 
 fn find_executable(cmd: &str) -> Option<String> {
@@ -93,6 +93,10 @@ fn execute_builtin(args: &[String]) -> String {
             
             format!("{}: not found", cmd)
         },
+
+        // "history" => {
+
+        // },
         _ => String::new()
     }
 }
@@ -188,7 +192,7 @@ fn execute_multi_command_pipeline(commands: &[Vec<String>]) -> std::io::Result<(
                 if i > 0 {
                     let (prev_read_fd, prev_write_fd) = pipes[i-1];
                     close(prev_write_fd).ok();
-                    dup2(prev_read_fd, 0).ok();
+                    dup2(prev_read_fd, 0).ok(); //0=stdin
                     close(prev_read_fd).ok();
                 }
 
@@ -196,7 +200,7 @@ fn execute_multi_command_pipeline(commands: &[Vec<String>]) -> std::io::Result<(
                 if i < num_commands -1{
                     let (next_read_fd, next_write_fd) = pipes[i];
                     close(next_read_fd).ok();
-                    dup2(next_write_fd, 1).ok();
+                    dup2(next_write_fd, 1).ok();//1=stdout
                     close(next_write_fd).ok();
                 }
 
