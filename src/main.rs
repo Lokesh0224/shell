@@ -9,6 +9,7 @@ use std::path::{Path};
 use std::process::Command;
 use std::os::unix::process::CommandExt;
 use std::collections::HashSet;
+use rustyline::history::FileHistory;
 use rustyline::history::History;
 
 
@@ -381,7 +382,7 @@ fn main() -> std::io::Result<()> {
     
 }
 
-fn save_history_to_file(rl: &rustyline::Editor<ShellCompleter, _>){
+fn save_history_to_file(rl: &rustyline::Editor<ShellCompleter, FileHistory>){
     if let Ok(histfile_path) = env::var("HISTFILE") {
         let history_iter = rl.history();
         let mut content = String::new();
