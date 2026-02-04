@@ -42,6 +42,7 @@ fn main() -> std::io::Result<()> {
     rl.set_helper(Some(h)); 
 
 
+
     loop{
         // print!("$ ");
         // io::stdout().flush().unwrap();
@@ -59,6 +60,8 @@ fn main() -> std::io::Result<()> {
 
         match readline {
             Ok(command) => {
+
+                rl.add_history_entry(&command); // Add command to history
 
                 if command.trim().is_empty() {
                     continue;
@@ -195,12 +198,12 @@ fn main() -> std::io::Result<()> {
 
                     },
 
-                    // "history" => {
-                    //     let history_iter = rl.history();
-                    //     for(idx, entry) in history_iter.iter().enumerate(){
-                            
-                    //     }
-                    // }, 
+                    "history" => {
+                        let history_iter = rl.history();
+                        for(idx, entry) in history_iter.iter().enumerate(){
+                            println!("{}: {}", idx+1, entry)
+                        }
+                    }, 
 
                     _ => {
                         let mut found = false;
@@ -257,6 +260,7 @@ fn main() -> std::io::Result<()> {
         //     continue;
         // }
     }
+    
     Ok(())
     
 }
