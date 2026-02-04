@@ -267,12 +267,18 @@ fn main() -> std::io::Result<()> {
                                 let result = OpenOptions::new()
                                                             .append(true)
                                                             .create(true)
-                                                            .open(filepath)?;
-                                if let Err(e) = std::fs::write(filepath, content){
+                                                            .open(filepath)
+                                                            .and_then(|mut file|{
+                                                                file.write_all(content.as_bytes())
+                                });
+
+                                if let Err(e) = result{
                                     redir.write_builtin_err(&format!("history: {}: {}", filepath, e));
+                                }else{
+                                    last_written_history_count = total_count;
                                 }
-                                continue;
                             }
+                            continue;
 
                             
                         }
