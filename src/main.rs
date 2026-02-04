@@ -122,7 +122,7 @@ fn main() -> std::io::Result<()> {
                 match zeroth {
                     "exit" => {
                         save_history_to_file(&rl);
-                        // append_history_to_file(&rl);
+                        append_history_to_file(&rl, last_written_history_count);
                         break
                     },
 
@@ -364,7 +364,7 @@ fn main() -> std::io::Result<()> {
             Err(ReadlineError::Eof) => {
                 // Ctrl-D was pressed
                 save_history_to_file(&rl);
-                // append_history_to_file(&rl);
+                append_history_to_file(&rl, last_written_history_count);
                 break;
             }, 
 
@@ -398,25 +398,28 @@ fn save_history_to_file(rl: &rustyline::Editor<ShellCompleter, FileHistory>){
     }
 }
 
-fn append_history_to_file(rl: &rustyline::Editor<ShellCompleter, FileHistory>){
+fn append_history_to_file(rl: &rustyline::Editor<ShellCompleter, FileHistory>, len: usize){
     if let Ok(histfile_path) = env::var("HISTFILE"){
         let history_iter = rl.history();
+        let total_count = history_iter.len();
 
-        let mut content = String::new();
+        if total_count >len{
+            let mut content = String::new();
 
-        //only for new entries
-        for entry in history_iter.iter(){
-            content.push_str(entry);
-            content.push('\n');
+            //only for new entries
+            for entry in history_iter.iter().skip(len){
+                content.push_str(entry);
+                content.push('\n');
+            }
+
+            let result = OpenOptions::new()
+                                        .append(true)
+                                        .create(true)
+                                        .open(histfile_path)
+                                        .and_then(|mut file|{
+                                            file.write_all(content.as_bytes())
+            });
         }
-
-        let result = OpenOptions::new()
-                                    .append(true)
-                                    .create(true)
-                                    .open(histfile_path)
-                                    .and_then(|mut file|{
-                                        file.write_all(content.as_bytes())
-                                     });   
     }
 }
 
