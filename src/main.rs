@@ -121,7 +121,7 @@ fn main() -> std::io::Result<()> {
 
                 match zeroth {
                     "exit" => {
-                        save_history_to_file(&rl);
+                        // save_history_to_file(&rl);
                         append_history_to_file(&rl, last_written_history_count);
                         break
                     },
@@ -363,7 +363,7 @@ fn main() -> std::io::Result<()> {
 
             Err(ReadlineError::Eof) => {
                 // Ctrl-D was pressed
-                save_history_to_file(&rl);
+                // save_history_to_file(&rl);
                 append_history_to_file(&rl, last_written_history_count);
                 break;
             }, 
