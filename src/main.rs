@@ -201,7 +201,7 @@ fn main() -> std::io::Result<()> {
                     "history" => {
                         let history_iter = rl.history();
                         for(idx, entry) in history_iter.iter().enumerate(){
-                            println!("{}: {}", idx+1, entry)
+                            println!("  {} {}", idx+1, entry)
                         }
                     }, 
 
