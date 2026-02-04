@@ -1,3 +1,4 @@
+use std::fs::read_to_string;
 #[allow(unused_imports)] //Do not show warnings if some imports are not used.
 use std::io::{self, Write};
 use std::env;
@@ -202,6 +203,22 @@ fn main() -> std::io::Result<()> {
                     },
 
                     "history" => {
+
+                        //check from -r flag to read from the file
+                        if args.len() > 2 && args[1] == "-r"{
+                            let filepath = &args[2];
+
+                            if let Ok(contents) = read_to_string(filepath){
+                                for each_line in contents.lines(){
+                                    if !each_line.trim().is_empty(){
+                                        rl.add_history_entry(each_line).ok();
+                                    }
+                                }
+                            }else{
+                                redir.write_builtin_err(&format!("history: {}: cannot read file", filepath));
+                            }
+                            continue;
+                        }
                         
                         let history_iter = rl.history();
                         let total_count = history_iter.len();
