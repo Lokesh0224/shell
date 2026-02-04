@@ -61,7 +61,7 @@ fn main() -> std::io::Result<()> {
         match readline {
             Ok(command) => {
 
-                //rl.add_history_entry(&command); // Add command to history
+                rl.add_history_entry(&command); // Add command to history
 
                 if command.trim().is_empty() {
                     continue;
