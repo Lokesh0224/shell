@@ -223,8 +223,25 @@ fn main() -> std::io::Result<()> {
                         // -w flag to write in the file
                         if args.len() > 2 && args[1] == "-w"{
                             let filepath = &args[2];
-                            fs::write(filepath, command)?;
+                            
+                            //get all the history entries
+                            let history_iter = rl.history();
+
+                            //store the history in to content
+                            let mut content = String::new();
+
+                            //add the content along with \n
+                            for entry in history_iter.iter(){
+                                content.push_str(entry);
+                                content.push('\n');
+                            }
+
+                            //now write the content into the file
+                            if let Err(e) = std::fs::write(filepath, content){
+                                redir.write_builtin_err(&format!("history: {}: {}", filepath, e));
+                            }
                             continue;
+                           
                         }
                         
                         let history_iter = rl.history();
