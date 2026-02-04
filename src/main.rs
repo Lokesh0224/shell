@@ -1,3 +1,4 @@
+use std::fs::OpenOptions;
 use std::fs::read_to_string;
 #[allow(unused_imports)] //Do not show warnings if some imports are not used.
 use std::io::{self, Write};
@@ -42,6 +43,9 @@ fn main() -> std::io::Result<()> {
         std::io::Error::new(std::io::ErrorKind::Other, e)
     })?;
     rl.set_helper(Some(h)); 
+
+    //Track history
+    let mut last_written_history_count = 0;
 
 
 
@@ -242,6 +246,35 @@ fn main() -> std::io::Result<()> {
                             }
                             continue;
                            
+                        }
+
+                        //-a flag to append file
+                        if args.len() > 2 && args[1] == "-a"{
+                            let filepath = &args[2];
+
+                            let history_iter = rl.history();
+                            let total_count = history_iter.len();
+
+                            if total_count >last_written_history_count{
+                                let mut content = String::new();
+
+                                //only for new entries
+                                for entry in history_iter.iter().skip(last_written_history_count){
+                                    content.push_str(entry);
+                                    content.push('n');
+                                }
+
+                                let result = OpenOptions::new()
+                                                            .append(true)
+                                                            .create(true)
+                                                            .open(filepath)?;
+                                if let Err(e) = std::fs::write(filepath, content){
+                                    redir.write_builtin_err(&format!("history: {}: {}", filepath, e));
+                                }
+                                continue;
+                            }
+
+                            
                         }
                         
                         let history_iter = rl.history();
