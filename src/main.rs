@@ -261,7 +261,7 @@ fn main() -> std::io::Result<()> {
                                 //only for new entries
                                 for entry in history_iter.iter().skip(last_written_history_count){
                                     content.push_str(entry);
-                                    content.push('n');
+                                    content.push('\n');
                                 }
 
                                 let result = OpenOptions::new()
