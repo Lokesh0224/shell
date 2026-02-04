@@ -7,6 +7,7 @@ use std::path::{Path};
 use std::process::Command;
 use std::os::unix::process::CommandExt;
 use std::collections::HashSet;
+use rustyline::history::History;
 
 
 
@@ -61,11 +62,13 @@ fn main() -> std::io::Result<()> {
         match readline {
             Ok(command) => {
 
-                rl.add_history_entry(&command); // Add command to history
 
                 if command.trim().is_empty() {
                     continue;
                 }
+
+                let _ = rl.add_history_entry(&command); // Add command to history
+
 
                 // Check if this is a pipeline FIRST
                 if command.contains('|'){
@@ -199,10 +202,30 @@ fn main() -> std::io::Result<()> {
                     },
 
                     "history" => {
+                        
                         let history_iter = rl.history();
-                        for(idx, entry) in history_iter.iter().enumerate(){
-                            println!("  {} {}", idx+1, entry)
+                        let total_count = history_iter.len();
+
+                        //get the user specified nummber
+                        let limit = if args.len() > 1 {
+                            //parse the index:1 arg to the type else keep the count as total_count
+                            args[1].parse::<usize>().unwrap_or(total_count)
+                        }else{
+                            total_count
+                        };
+
+                        //start index from where you need to print in the terminal
+                        let start_index = if total_count > limit {
+                            total_count - limit
+                        }else{
+                            0
+                        };
+
+                        for(idx, entry) in history_iter.iter().enumerate().skip(start_index){
+                            let msg = format!("  {} {}", idx+1, entry);
+                            redir.write_builtin_output(&msg);
                         }
+                        continue;
                     }, 
 
                     _ => {
