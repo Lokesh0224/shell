@@ -120,6 +120,7 @@ fn main() -> std::io::Result<()> {
 
                 match zeroth {
                     "exit" => {
+                        save_history_to_file(&rl);
                         break
                     },
 
@@ -360,6 +361,7 @@ fn main() -> std::io::Result<()> {
 
             Err(ReadlineError::Eof) => {
                 // Ctrl-D was pressed
+                save_history_to_file(&rl);
                 break;
             }, 
 
@@ -377,6 +379,20 @@ fn main() -> std::io::Result<()> {
     
     Ok(())
     
+}
+
+fn save_history_to_file(rl: &rustyline::Editor<ShellCompleter, _>){
+    if let Ok(histfile_path) = env::var("HISTFILE") {
+        let history_iter = rl.history();
+        let mut content = String::new();
+        
+        for entry in history_iter.iter() {
+            content.push_str(entry);
+            content.push('\n');
+        }
+        
+        std::fs::write(&histfile_path, content).ok();
+    }
 }
 
 
