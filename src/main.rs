@@ -396,6 +396,32 @@ fn save_history_to_file(rl: &rustyline::Editor<ShellCompleter, FileHistory>){
     }
 }
 
+fn append_history_to_file(rl: &rustyline::Editor<ShellCompleter, FileHistory>){
+    if let Ok(histfile_path) = env::var("HISTFILE"){
+        let history_iter = rl.history();
+        let total_count = history_iter.len();
+
+        let mut content = String::new();
+
+        //only for new entries
+        for entry in history_iter.iter(){
+            content.push_str(entry);
+            content.push('\n');
+        }
+
+        let result = OpenOptions::new()
+                                    .append(true)
+                                    .create(true)
+                                    .open(histfile_path)
+                                    .and_then(|mut file|{
+                                        file.write_all(content.as_bytes())
+        });
+
+            
+        
+    }
+}
+
 
 
 
