@@ -204,7 +204,7 @@ fn main() -> std::io::Result<()> {
 
                     "history" => {
 
-                        //check from -r flag to read from the file
+                        // -r flag to read from the file
                         if args.len() > 2 && args[1] == "-r"{
                             let filepath = &args[2];
 
@@ -217,6 +217,13 @@ fn main() -> std::io::Result<()> {
                             }else{
                                 redir.write_builtin_err(&format!("history: {}: cannot read file", filepath));
                             }
+                            continue;
+                        }
+
+                        // -w flag to write in the file
+                        if args.len() > 2 && args[1] == "-w"{
+                            let filepath = &args[2];
+                            fs::write(filepath, command)?;
                             continue;
                         }
                         
